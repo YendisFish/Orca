@@ -1,0 +1,8 @@
+name: "orca-example"
+pod:
+  orca-example-1:
+    path: "./orca-example-1.yaml"
+  orca-example-2:
+    image: "nginx:latest"
+    child-of: "orca-example-1"
+profile-default: "dev"
