@@ -1,3 +1,4 @@
+using Orca.Lib.Logging;
 using Orca.Lib.Sockets;
 
 namespace Orca.Lib.Engine;
@@ -12,9 +13,10 @@ public class OrcaEngine
         SocketPath = socketPath;
         SocketHub = new OrcaSocketHub(SocketPath);
     }
-
+    
     public async Task Start()
     {
+        Logger.Console.Info("Starting engine...");
         await SocketHub.Start();
     }
 }

@@ -1,10 +1,13 @@
 using System.Diagnostics;
 using System.IO.Pipes;
+using System.Net.Mime;
 using System.Net.Sockets;
 using System.Runtime.InteropServices.JavaScript;
 using Newtonsoft.Json;
 using Orca.Lib.Exceptions;
+using Orca.Lib.Logging;
 using Orca.Lib.Messages;
+using Orca.Lib.Wrappers;
 
 namespace Orca.Lib.Sockets;
 
@@ -31,7 +34,7 @@ public class OrcaSocketHub : IDisposable
         listenSock.Bind(endPoint);
         listenSock.Listen(queueLength);
 
-        Console.WriteLine("Bound to " + sockPath);
+        Logger.Console.Info($"Bound to {sockPath.AsColor(StringColor.Yellow)}");
         await OrcaSocketHub.SetOrcaSocketPermissions();
         
         while (true)
@@ -65,7 +68,7 @@ public class OrcaSocketHub : IDisposable
                 {
                     case MessageType.TEST:
                     {
-                        Console.WriteLine(msg.Type);
+                        await Images.Pull("nginx:latest");
                         break;
                     }
                 }
@@ -81,7 +84,7 @@ public class OrcaSocketHub : IDisposable
 
     public static async Task SetOrcaSocketPermissions()
     {
-        Console.WriteLine("Setting socket permissions");
+        Logger.Console.Info("Setting socket permissions...");
         
         ProcessStartInfo pinf = new ProcessStartInfo()
         {

@@ -1,6 +1,7 @@
 ﻿using Orca.Daemon;
 using Orca.Lib.Engine;
 using Orca.Lib.Exceptions;
+using Orca.Lib.Logging;
 
 await Init.CreateGroup();
 await Init.ConfigureFiles();
@@ -10,7 +11,7 @@ OrcaEngine engine = new OrcaEngine("/var/orca/orca.sock");
 
 engine.SocketHub.OnMessageRecieved = async (msg) =>
 {
-    Console.WriteLine("EVENT LISTENER: OnMessageRecieved");
+    Logger.Console.Info("Message recieved!");
 };
 
 await engine.Start();
