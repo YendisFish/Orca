@@ -18,8 +18,10 @@ public class PodMember
 {
    [YamlMember(Alias = "path")]
    public string? Path { get; set; }
-   [YamlMember(Alias = "image")]
-   public string? Image { get; set; }
+   [YamlMember(Alias = "target")]
+   public string? Target { get; set; }
    [YamlMember(Alias = "child-of")]
    public string? ChildOf { get; set; }
+   [YamlMember(Alias = "mount")]
+   public Dictionary<string, string>? Mount { get; set; }
 }
