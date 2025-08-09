@@ -1,4 +1,6 @@
 using Orca.CLI.Config;
+using Orca.Lib.Modules;
+using Orca.Lib.Logging;
 using Orca.Lib;
 using Orca.Lib.Messages;
 using Orca.Lib.Sockets;
@@ -51,40 +53,37 @@ public class Arguments
                 case "-p":
                 {
                     string path = args[++i];
-                    string yaml = await File.ReadAllTextAsync("./orca.yaml");
-            
-                    Deserializer d = new Deserializer();
-                    conf = d.Deserialize<PodConfig>(yaml);
-                    
+                    string yaml = await File.ReadAllTextAsync(Path.Join(path, "orca.yaml"));
+           
+                    try {
+
+                        Deserializer d = new Deserializer();
+                        conf = d.Deserialize<PodConfig>(yaml);
+                    } catch(Exception ex) {
+                        Logger.Console.Error(ex.Message);
+                    }
                     break;
                 }
             } 
         }
 
         if (conf == null) throw new FileNotFoundException("Could not find config!");
-        
-        var r = new RolloutInfo()
+
+        List<MemberRequest> reqs = new();
+        foreach(var pod in conf.Pods!.Values)
         {
-            ConfigName = conf.Name,
-            DeploymentPlan = new Dictionary<string, string>()
-            {
-                { "A1", "0\n1\n2\n3\n4\n5\n6" },
-                { "A2", "0\n1\n2\n3\n4\n5\n6" }
-            },
-            Progress = "0"
-        };
-
-        Writer.StartRollout(r);
-
-        for (int i = 0; i < 94; i++) {
-            foreach (var kvp in r.DeploymentPlan)
-            {
-                r.DeploymentPlan[kvp.Key] = $"{i}\n{i + 1}\n{i + 2}\n{i + 3}\n{i + 4}\n{i + 5}\n{i + 6}";
-            }
-            r.Progress = $"{i}";
-    
-            Writer.WriteRollout(r);
-            Task.Delay(100).Wait();
+            reqs.Add(new MemberRequest(MemberRequestType.BUILD,
+                        new MemberBuildData()
+                        {
+                            Image = pod.Target,
+                            BuildTasks = new()
+                        }));
         }
+
+        using OrcaSocket sock = new OrcaSocket("/var/orca/orca.sock");
+        await sock.Write(new BuildMessage(MessageType.BUILD) 
+                {
+                    Requests = reqs
+                }); 
     }
 }

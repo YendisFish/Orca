@@ -63,7 +63,12 @@ public class OrcaSocketHub : IDisposable
 
             try
             {
-                OrcaMessage msg = JsonConvert.DeserializeObject<OrcaMessage>(line) ??
+                var settings = new JsonSerializerSettings
+                {
+                    TypeNameHandling = TypeNameHandling.All,
+                    TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple
+                };
+                OrcaMessage msg = JsonConvert.DeserializeObject<OrcaMessage>(line, settings) ??
                                   throw new BadMessageException($"Could not parse message: {line}");
 
                 if (OnMessageRecieved is not null) await OnMessageRecieved(msg);
@@ -79,11 +84,36 @@ public class OrcaSocketHub : IDisposable
                                     })); 
                         break;
                     }
+                    case MessageType.BUILD:
+                    {
+                        BuildMessage b = (BuildMessage)msg;
+                        foreach(var req in b.Requests)
+                        {
+                            switch(req.type)
+                            {
+                                case MemberRequestType.BUILD:
+                                {
+                                    MemberBuildData dat = req.data as MemberBuildData
+                                        ?? throw new NullReferenceException("Member data not found");
+                                    
+                                    if(dat.Image.StartsWith("docker:")) 
+                                    {
+                                        dat.Image = dat.Image.Replace("docker:", "");
+                                        await orca.MemberHub.Push(req);
+                                    }
+
+                                    break;
+                                }
+                            }
+                        }
+
+                        break;
+                    }
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Logger.Console.Error(e.ToString());
             }
         }
     }

@@ -38,8 +38,10 @@ public class MemberHub
        Logger.Console.Info("Building container");
 
        //todo: Actually check if image already exists
-       await Images.Pull((r.data as MemberBuildData ??
+       string imageHash = await Images.Pull((r.data as MemberBuildData ??
                    throw new NullReferenceException()).Image);
+
+       Logger.Console.Info($"Image hash: {imageHash.AsColor(StringColor.Yellow)}");
     }
 
     public async Task Push(MemberRequest r)
@@ -72,8 +74,6 @@ public class MemberRequest
         
         return output as T;
     }
-
-    
 }
 
 public enum MemberRequestType 
@@ -83,7 +83,7 @@ public enum MemberRequestType
     INFO
 }
 
-public abstract class MemberRequestData;
+public class MemberRequestData;
 
 public class MemberBuildData : MemberRequestData
 {

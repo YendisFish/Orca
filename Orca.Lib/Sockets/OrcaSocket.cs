@@ -33,7 +33,12 @@ public class OrcaSocket : IDisposable
 
     public async Task Write(OrcaMessage message)
     {
-        string json = JsonConvert.SerializeObject(message);
+        JsonSerializerSettings s = new JsonSerializerSettings 
+        {
+            TypeNameHandling = TypeNameHandling.All,
+            TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple
+        };
+        string json = JsonConvert.SerializeObject(message, s);
         await writer.WriteAsync(json);
     }
 
