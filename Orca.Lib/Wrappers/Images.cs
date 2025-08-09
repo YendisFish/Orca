@@ -10,7 +10,7 @@ namespace Orca.Lib.Wrappers;
 
 public class Images
 {
-    public static async Task Pull(string image)
+    public static async Task<string> Pull(string image)
     {
         string previous = Directory.GetCurrentDirectory();
         string dirName = Path.Join("/var/orca/images/", Guid.NewGuid().ToString());
@@ -39,8 +39,11 @@ public class Images
        
         Logger.Console.Info($"Cleaning up...");
         Directory.Delete(dirName, true);
+        Logger.Console.Info("Cleaned up");
         
         Directory.SetCurrentDirectory(previous);
+
+        return hash;
     }
 
     public static string GetManifestHash(string manifest)
@@ -86,7 +89,7 @@ public record ImagesConfig(List<ImageInfo> Images)
             {
                 File.Create("/etc/orca/images/images.json").Close();
             }
-
+            
             await File.WriteAllTextAsync("/etc/orca/images/images.json", JsonConvert.SerializeObject(config));
         }
         catch (Exception e)

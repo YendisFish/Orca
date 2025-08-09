@@ -1,13 +1,13 @@
 using System.Diagnostics;
-using System.IO.Pipes;
-using System.Net.Mime;
 using System.Net.Sockets;
-using System.Runtime.InteropServices.JavaScript;
 using Newtonsoft.Json;
 using Orca.Lib.Exceptions;
 using Orca.Lib.Logging;
 using Orca.Lib.Messages;
 using Orca.Lib.Wrappers;
+using Orca.Lib.Models;
+using Orca.Lib.Modules;
+using Orca.Lib.Engine;
 
 namespace Orca.Lib.Sockets;
 
@@ -17,7 +17,9 @@ public class OrcaSocketHub : IDisposable
     internal string sockPath { get; init; }
     public Dictionary<Socket, CancellationTokenSource> Sockets { get; set; } = new();
     
-    public OrcaSocketHub(string socketPath)
+    private OrcaEngine orca { get; set; }
+
+    public OrcaSocketHub(string socketPath, OrcaEngine orca)
     {
         if (File.Exists(socketPath))
         {
@@ -25,6 +27,8 @@ public class OrcaSocketHub : IDisposable
         }
         
         this.sockPath = socketPath;
+
+        this.orca = orca;
     }
 
     public async Task Start(int queueLength = 10)
@@ -68,7 +72,11 @@ public class OrcaSocketHub : IDisposable
                 {
                     case MessageType.TEST:
                     {
-                        await Images.Pull("nginx:latest");
+                        await orca.MemberHub.Push(new MemberRequest(MemberRequestType.BUILD,
+                                    new MemberBuildData() {
+                                        Image = "nginx:latest",
+                                        BuildTasks = new()
+                                    })); 
                         break;
                     }
                 }
