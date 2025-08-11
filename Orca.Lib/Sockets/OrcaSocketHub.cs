@@ -27,7 +27,6 @@ public class OrcaSocketHub : IDisposable
         }
         
         this.sockPath = socketPath;
-
         this.orca = orca;
     }
 
@@ -63,19 +62,14 @@ public class OrcaSocketHub : IDisposable
 
             try
             {
-                var settings = new JsonSerializerSettings
-                {
-                    TypeNameHandling = TypeNameHandling.All,
-                    TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple
-                };
-                OrcaMessage msg = JsonConvert.DeserializeObject<OrcaMessage>(line, settings) ??
+                OrcaMessage msg = JsonConvert.DeserializeObject<OrcaMessage>(line, Globals.Settings) ??
                                   throw new BadMessageException($"Could not parse message: {line}");
 
                 if (OnMessageRecieved is not null) await OnMessageRecieved(msg);
 
                 switch (msg.Type)
                 {
-                    case MessageType.TEST:
+                    case MessageType.DATA:
                     {
                         await orca.MemberHub.Push(new MemberRequest(MemberRequestType.BUILD,
                                     new MemberBuildData() {
@@ -86,6 +80,8 @@ public class OrcaSocketHub : IDisposable
                     }
                     case MessageType.BUILD:
                     {
+                        var wrt = this.StreamSockOn(socket);
+
                         BuildMessage b = (BuildMessage)msg;
                         foreach(var req in b.Requests)
                         {
@@ -107,6 +103,7 @@ public class OrcaSocketHub : IDisposable
                             }
                         }
 
+                        this.StreamSockOff(wrt);
                         break;
                     }
                 }
@@ -117,7 +114,19 @@ public class OrcaSocketHub : IDisposable
             }
         }
     }
-    
+   
+    public TeeWriter StreamSockOn(Socket sock)
+    {
+        TeeWriter wrt = new TeeWriter(Console.Out, new NetworkStream(sock, ownsSocket: false));
+        wrt.OpenStream();
+        
+        Console.SetOut(wrt);
+
+        return wrt;
+    }
+
+    public void StreamSockOff(TeeWriter wrt) => wrt.ResetStdout();
+
     public void Dispose() => listenSock.Dispose();
 
     public static async Task SetOrcaSocketPermissions()
@@ -152,4 +161,8 @@ public class OrcaSocketHub : IDisposable
     
     public delegate Task OnMessage(OrcaMessage msg);
     public OnMessage OnMessageRecieved { get; set; }
+
+
+    public delegate Task OnBuild(OrcaMessage msg);
+    public OnBuild OnBuildTriggered { get; set; }
 }

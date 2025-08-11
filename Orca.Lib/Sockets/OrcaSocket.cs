@@ -6,9 +6,9 @@ namespace Orca.Lib.Sockets;
 
 public class OrcaSocket : IDisposable
 {
-    private Socket sock { get; set; }
-    private StreamReader reader { get; set; }
-    private StreamWriter writer { get; set; }
+    public Socket sock { get; set; }
+    public StreamReader reader { get; set; }
+    public StreamWriter writer { get; set; }
 
     public OrcaSocket(string path)
     {
@@ -28,21 +28,26 @@ public class OrcaSocket : IDisposable
         string? line = await reader.ReadLineAsync();
         if (line is null) return null;
         
-        return JsonConvert.DeserializeObject<OrcaMessage>(line);
+        return JsonConvert.DeserializeObject<OrcaMessage>(line, Globals.Settings);
+    }
+
+    public async Task<OrcaMessage?> Read(CancellationToken tok)
+    {
+        string? line = await reader.ReadLineAsync(tok);
+        if (line is null) return null;
+        
+        return JsonConvert.DeserializeObject<OrcaMessage>(line, Globals.Settings);
     }
 
     public async Task Write(OrcaMessage message)
     {
-        JsonSerializerSettings s = new JsonSerializerSettings 
-        {
-            TypeNameHandling = TypeNameHandling.All,
-            TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple
-        };
-        string json = JsonConvert.SerializeObject(message, s);
-        await writer.WriteAsync(json);
+        string json = JsonConvert.SerializeObject(message, Globals.Settings);
+        await writer.WriteLineAsync(json);
     }
 
     public void Listen() => sock.Listen(10);
+
+    public void Flush() => writer.Flush();
 
     public void Dispose()
     {

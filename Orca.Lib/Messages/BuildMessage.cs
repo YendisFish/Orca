@@ -6,6 +6,5 @@ public class BuildMessage : OrcaMessage
 {
     public List<MemberRequest> Requests { get; set; }
 
-    public BuildMessage(MessageType tp) : base(tp)
-    {}
+    public BuildMessage(MessageType tp) : base(tp) {}
 }

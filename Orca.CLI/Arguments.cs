@@ -5,6 +5,7 @@ using Orca.Lib;
 using Orca.Lib.Messages;
 using Orca.Lib.Sockets;
 using YamlDotNet.Serialization;
+using System.Net.Sockets;
 
 namespace Orca.CLI;
 
@@ -19,7 +20,7 @@ public class Arguments
                 case "test":
                 {
                     OrcaSocket socket = new OrcaSocket("/var/orca/orca.sock");
-                    await socket.Write(new OrcaMessage(MessageType.TEST));
+                    await socket.Write(new OrcaMessage(MessageType.DATA));
                     break;
                 }
 
@@ -56,7 +57,6 @@ public class Arguments
                     string yaml = await File.ReadAllTextAsync(Path.Join(path, "orca.yaml"));
            
                     try {
-
                         Deserializer d = new Deserializer();
                         conf = d.Deserialize<PodConfig>(yaml);
                     } catch(Exception ex) {
@@ -84,6 +84,9 @@ public class Arguments
         await sock.Write(new BuildMessage(MessageType.BUILD) 
                 {
                     Requests = reqs
-                }); 
+                });
+        sock.Flush();
+
+        await Streaming.Streaming.IntakeStream(sock);
     }
 }

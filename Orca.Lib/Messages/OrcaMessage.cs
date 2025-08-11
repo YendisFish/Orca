@@ -16,6 +16,7 @@ public class OrcaMessage
 
 public enum MessageType
 {
-    TEST,
-    BUILD
+    DATA,
+    BUILD,
+    TOGGLESTREAM
 }
